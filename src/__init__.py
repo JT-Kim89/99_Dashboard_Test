@@ -1,0 +1,1 @@
+"""FPSO dashboard helper package."""

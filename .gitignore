@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.streamlit/
+.streamlit_uploads/
+
+# 실제 프로젝트 DB는 커질 수 있으므로 기본적으로 제외합니다.
+# 샘플 DB만 예외로 남겨 두었습니다.
+data/*.db
+data/*.sqlite
+!data/fpso_results_sample.sqlite
