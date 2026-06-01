@@ -57,6 +57,12 @@ streamlit run app.py
 python -m streamlit run app.py
 ```
 
+특정 SQLite DB를 바로 연결해서 실행할 수도 있습니다.
+
+```powershell
+python -m streamlit run app.py -- --db "C:\path\to\result.db"
+```
+
 실행 후 브라우저에서 열리는 화면의 사이드바에서 다음을 선택합니다.
 
 - SQLite DB 업로드 또는 로컬 DB 경로 입력
@@ -89,6 +95,35 @@ python -m streamlit run app.py
 - `src/charts.py`: Plotly 차트 생성
 - `src/config.py`: 기본 경로와 자주 쓰는 컬럼명 설정
 - `scripts/create_sample_db.py`: 테스트용 샘플 DB 생성
+- `integration/FpsoDashboardLauncher.cs`: C# 해석 코드에서 dashboard를 실행하는 헬퍼
 
 처음 수정할 때는 보통 `src/config.py`에서 컬럼 후보를 바꾸거나,
 `app.py`의 사이드바/탭 구성을 조금 고치면 됩니다.
+
+## C# 해석 코드와 연결
+
+C# 해석 프로젝트에 `integration/FpsoDashboardLauncher.cs` 파일을 추가한 뒤,
+SQLite `*.db` 파일 저장이 끝나는 지점에서 아래처럼 호출하면 됩니다.
+
+```csharp
+using FpsoDashboardIntegration;
+
+string dbFilePath = @"C:\analysis\results\case_001.db";
+string dashboardDirectory = @"C:\Users\jtkim\OneDrive\문서\New project 7";
+
+FpsoDashboardLauncher.LaunchDashboard(
+    dbFilePath: dbFilePath,
+    dashboardDirectory: dashboardDirectory,
+    port: 8508);
+```
+
+`integration/FpsoDashboardLauncher.cs`는 다음 순서로 동작합니다.
+
+- DB 파일이 실제로 생성되고 읽을 수 있는 상태인지 잠시 확인
+- dashboard 프로젝트의 `.venv\Scripts\python.exe`를 우선 사용
+- 없으면 `py -3.13`으로 Streamlit 실행
+- `app.py`에 DB 경로를 `--db`와 `FPSO_DASHBOARD_DB`로 전달
+- 브라우저에서 `http://127.0.0.1:8508/?db=...` 열기
+
+이 헬퍼는 `ProcessStartInfo.Arguments` 방식으로 작성되어,
+.NET Framework 기반 프로젝트와 최신 .NET 프로젝트 모두에 붙이기 쉽게 만들었습니다.
