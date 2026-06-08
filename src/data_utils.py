@@ -2,6 +2,12 @@
 
 이 파일은 pandas DataFrame을 대시보드에서 쓰기 좋은 형태로 다듬습니다.
 각 함수는 가능한 한 한 가지 일만 하도록 작게 나누었습니다.
+
+초보자용 설명:
+- DB에서 읽어 온 DataFrame은 바로 차트에 쓰기 어려울 때가 많습니다.
+- 컬럼명 앞뒤에 공백이 있거나, 숫자가 TEXT로 저장되어 있거나,
+  완전히 빈 행이 섞여 있을 수 있습니다.
+- app.py가 화면에 집중할 수 있도록 이런 데이터 정리 작업을 이 파일에서 처리합니다.
 """
 
 from __future__ import annotations
@@ -52,6 +58,8 @@ def should_use_numeric_conversion(
     반대로 FullLoad 같은 Loading Condition 컬럼은 숫자로 바꾸면 안 됩니다.
     """
 
+    # min_ratio는 "얼마나 많은 값이 숫자로 바뀌면 숫자 컬럼으로 인정할 것인가"입니다.
+    # 기본값 0.8은 80% 이상이 숫자로 변환되면 숫자 컬럼으로 보겠다는 의미입니다.
     return numeric_ratio(original, converted) >= min_ratio
 
 
@@ -60,6 +68,8 @@ def coerce_possible_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     converted_df = df.copy()
     for column in converted_df.columns:
+        # pd.to_numeric(errors="coerce")는 변환 실패 값을 NaN으로 만듭니다.
+        # 예: "335" -> 335, "FullLoad" -> NaN
         converted = coerce_series_to_number(converted_df[column])
         if should_use_numeric_conversion(converted_df[column], converted):
             converted_df[column] = converted
@@ -67,7 +77,14 @@ def coerce_possible_numeric_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    """DB에서 읽은 원본 DataFrame을 대시보드용으로 정리합니다."""
+    """DB에서 읽은 원본 DataFrame을 대시보드용으로 정리합니다.
+
+    이 함수는 DB 로딩 직후 항상 한 번 호출됩니다.
+    순서:
+    1. 컬럼명 공백 제거
+    2. 완전히 빈 행 제거
+    3. 숫자처럼 보이는 컬럼을 숫자 dtype으로 변환
+    """
 
     cleaned = strip_column_names(df)
     cleaned = drop_fully_empty_rows(cleaned)
